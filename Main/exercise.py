@@ -53,18 +53,28 @@ class bullet1(object):
         self.delay = 100
 
     def update(self):
-        if self.delay % 10 == 0:
+        if self.delay % 5 == 0:
             self.bullet_x.append(plane.plane_x + 38)
             self.bullet_y.append(plane.plane_y)
+            self.sound = pygame.mixer.Sound('../Studio/platk.wav')
+            pygame.mixer.Sound.play(self.sound)
 
-        for i in range(len(self.bullet_x) - 1):
+        for i in range(len(self.bullet_y) - 1):
             screen.blit(self.image, (self.bullet_x[i], self.bullet_y[i]))
 
-        for i in range(len(self.bullet_x) - 1):
+        for i in range(len(self.bullet_y) - 1):
             self.bullet_y[i] -= 10
-            if self.bullet_y[i] <= 10:
+        for i in range(len(self.bullet_y) - 1):
+            if self.bullet_y[i] < boss.boss_y + 128 and self.bullet_x[i] > boss.boss_x and self.bullet_x[i] < boss.boss_x + 206 and boss.boss_flag:
+                boss.Hp -= 1
                 del self.bullet_x[i]
                 del self.bullet_y[i]
+                break
+            elif self.bullet_y[i] <= 10:
+                del self.bullet_x[i]
+                del self.bullet_y[i]
+                break
+
 
         self.delay -= 1
         if not self.delay:
@@ -74,13 +84,21 @@ class Boss1(object):
     def __init__(self):
         self.boss_x = 300
         self.boss_y = 0
+        self.Hp = 10
+        self.boss_flag = False
 
     def update(self):
         self.boss_image = pygame.image.load('../IMages/yz.png').convert_alpha()
         self.boss_image = pygame.transform.scale(self.boss_image, (208, 236))
-        if score.score % 100 == 0 and score.score != 0:
+        if score.score % 100 == 0 and self.Hp > 0:
+            self.boss_flag = True
+
+        else:
+            self.boss_flag = False
+        if self.boss_flag:
             screen.blit(self.boss_image, (self.boss_x, self.boss_y))
             self.boss_y += 2
+
 
 
 
