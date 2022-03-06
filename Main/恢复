@@ -12,8 +12,8 @@ class plane(object):
         self.plane_y = 724
         self.old_x = self.plane_x
         self.dead = False
-        self.plane_mask = pygame.Surface((76, 76), pygame.SRCALPHA)
-        self.plane_rect = pygame.Rect(262, 724, 76, 76)
+
+
     def load(self):
         self.image = [pygame.image.load('../IMages/plane.png'),
                       pygame.image.load('../IMages/plane-1.png'),
@@ -21,58 +21,46 @@ class plane(object):
                       pygame.image.load('../IMages/bang.png')]
 
 
-
     def update(self):
-        self.plane_mask.fill('black')
-        self.plane = pygame.transform.scale(self.image[self.satue], (76, 76))
-        self.plane_mask.blit(self.plane, (0, 0))
-        self.plane_ml = pygame.mask.from_surface(self.plane_mask)
-        screen.blit(self.plane_mask, self.plane_rect)
+        self.plane = self.image[self.satue].convert_alpha()
+        self.plane = pygame.transform.scale(self.plane, (76, 76))
+        screen.blit(self.plane, (self.plane_x, self.plane_y))
         self.keylist = pygame.key.get_pressed()
-        if self.keylist[pygame.K_a] and self.plane_x >= 0:
-            self.plane_rect.move_ip(-5, 0)
-            self.plane_x -= 5
-
-        if self.keylist[pygame.K_d] and self.plane_x <= 524:
-            self.plane_rect.move_ip(5, 0)
-            self.plane_x += 5
-        if self.keylist[pygame.K_w] and self.plane_y >= 0:
-            self.plane_rect.move_ip(0, -5)
-            self.plane_y -= 5
-
-        if self.keylist[pygame.K_s] and self.plane_y <= 719:
-            self.plane_rect.move_ip(0, 5)
-            self.plane_y += 5
-
-        if self.old_x > self.plane_x:
-            self.satue = 2
-
-        if self.old_x < self.plane_x:
-            self.satue = 1
-
-        if self.old_x == self.plane_x:
-            self.satue = 0
-        self.old_x = self.plane_x
-
+        if self.satue == 3:
+            stop.update()
         if not self.dead:
+            if self.keylist[pygame.K_a] and self.plane_x >= 0:
+
+                self.plane_x -= 5
+
+            if self.keylist[pygame.K_d] and self.plane_x <= 524:
+                self.plane_x += 5
+
+            if self.keylist[pygame.K_w] and self.plane_y >= 0:
+                self.plane_y -= 5
+
+            if self.keylist[pygame.K_s] and self.plane_y <= 719:
+                self.plane_y += 5
+
+            if self.old_x > self.plane_x:
+                self.satue = 2
+
+            if self.old_x < self.plane_x:
+                self.satue = 1
+
+            if self.old_x == self.plane_x:
+                self.satue = 0
+            self.old_x = self.plane_x
+
             if level.level == 0:
                 bullet1.update()
             elif level.level == 1:
                 bullet2.update()
-            if boss.boss_flag:
-                self.offset = boss.boss_rect.x - self.plane_rect.x, boss.boss_rect.y - self.plane_rect.y
-                self.p = self.plane_ml.overlap(boss.boss_ml, self.offset)
-                if self.p:
-                    self.satue = 3
-                    self.dead = True
-                    screen.blit(self.plane_mask, self.plane_rect)
-                if not self.p:
-                    screen.blit(boss.boss_mask, boss.boss_rect)
-                    boss.boss_rect.move_ip(0, 2)
-                    boss.boss_y += 2
-
-        if self.satue == 3:
-            stop.update()
+        if boss.boss_flag:
+            if (self.plane_x + 76) >= boss.boss_x and (self.plane_x + 76) <= (boss.boss_x + 208) and (self.plane_y - boss.boss_y) <= 150 and (self.plane_y - boss.boss_y) >= 0:
+                self.satue = 3
+                self.dead = True
+                screen.blit(self.plane, (self.plane_x, self.plane_y))
 
 
 class bullet1(object):
@@ -81,7 +69,6 @@ class bullet1(object):
         self.image = pygame.transform.scale(self.image, (6, 12))
         self.bullet_x = []
         self.bullet_y = []
-        self.bullet_mask = pygame.Surface((6, 12))
         self.delay = 100
 
     def update(self):
@@ -92,21 +79,17 @@ class bullet1(object):
             pygame.mixer.Sound.play(self.sound)
 
         for i in range(len(self.bullet_y) - 1):
-            self.bullet_mask.blit(self.image, (0, 0))
-            screen.blit(self.bullet_mask, (self.bullet_x[i], self.bullet_y[i], 6, 12))
-
+            screen.blit(self.image, (self.bullet_x[i], self.bullet_y[i]))
 
         for i in range(len(self.bullet_y) - 1):
             self.bullet_y[i] -= 10
         for i in range(len(self.bullet_y) - 1):
-            self.offset = boss.boss_rect.x - self.bullet_x[i], boss.boss_y - self.bullet_y[i]
-            self.bullet_ml= pygame.mask.from_surface(self.bullet_mask)
-            self.p = self.bullet_ml.overlap(boss.boss_ml, self.offset)
-            if self.p:
-                boss.Hp -= 1
-                del self.bullet_x[i]
-                del self.bullet_y[i]
-                break
+            if self.bullet_y[i] > boss.boss_y:
+                if self.bullet_y[i] < boss.boss_y + 128 and self.bullet_x[i] > boss.boss_x and self.bullet_x[i] < boss.boss_x + 180 and boss.boss_flag:
+                    boss.Hp -= 1
+                    del self.bullet_x[i]
+                    del self.bullet_y[i]
+                    break
             elif self.bullet_y[i] <= 10:
                 del self.bullet_x[i]
                 del self.bullet_y[i]
@@ -176,24 +159,23 @@ class Boss1(object):
         self.Hp = 20
         self.boss_flag = False
         self.boss_x = random.randint(0, 400)
-        self.boss_image = pygame.image.load('../IMages/yz.png').convert_alpha()
-        self.boss_image = pygame.transform.scale(self.boss_image, (200, 200))
-        self.boss_mask = pygame.Surface((208, 236), pygame.SRCALPHA)
-        self.boss_mask.blit(self.boss_image, (0, 0))
-        self.boss_ml = pygame.mask.from_surface(self.boss_mask)
-        self.boss_rect = pygame.Rect(self.boss_x, self.boss_y, 208, 236)
 
     def update(self):
+        self.boss_image = pygame.image.load('../IMages/yz.png').convert_alpha()
+        self.boss_image = pygame.transform.scale(self.boss_image, (208, 236))
         if self.Hp > 0:
             self.boss_flag = True
-        elif self.boss_flag:
+        else:
             self.boss_flag = False
             score.num += 1
-        if self.boss_y >= 1000 or not self.boss_flag:
+        if self.boss_flag and self.boss_y <= 1000:
+            screen.blit(self.boss_image, (self.boss_x, self.boss_y))
+            self.boss_rect = self.boss_image.get_rect()
+            self.boss_y += 2
+        else:
             self.boss_x = random.randint(0, 400)
             self.boss_y = -100
             self.Hp = 20
-            self.boss_rect = pygame.Rect(self.boss_x, self.boss_y, 208, 236)
 
 
 class Score(object):
